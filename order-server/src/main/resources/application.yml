@@ -1,0 +1,69 @@
+server:
+  port: 9111 #端口
+  tomcat:
+    max-threads: 10
+spring:
+  application:
+    name: order-product #服务名称
+  cloud:
+    sentinel:
+      transport:
+        dashboard: localhost:8080
+      datasource:
+        ds1:
+          file:
+            file: classpath:flowrule.json
+            data-type: json
+            rule-type: flow
+      eager: true
+  zipkin:
+    base-url: http://127.0.0.1:9411/  #server的请求地址
+    sender:
+      type: web #数据的传输方式 , 已http的形式向server端发送数据
+  sleuth:
+    sampler:
+      probability: 1 #采样比
+#配置Eureka
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:9000/eureka/,http://localhost:8000/eureka/
+  instance:
+    prefer-ip-address: true #使用ip地址注册
+    instance-id: ${spring.cloud.client.ip-address}:${server.port} #向注册中心中注册服务id
+    lease-renewal-interval-in-seconds: 5 #向注册中心中注册服务id
+    lease-expiration-duration-in-seconds: 10 #续约到期的时间
+
+#logging:
+#  level:
+#    root: debug
+#修改ribbon的负载均衡策略 服务名 - ribbon - NFLoadBalancerRuleClassName ：策略(全名)
+service-product:
+  ribbon:
+    #NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule
+    ConnectTimeout: 250 # Ribbon的连接超时时间
+    ReadTimeout: 1000 # Ribbon的数据读取超时时间
+    OkToRetryOnAllOperations: true # 是否对所有操作都进行重试
+    MaxAutoRetriesNextServer: 1 # 切换实例的重试次数
+    MaxAutoRetries: 1 # 对当前实例的重试次数
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+hystrix:
+  command:
+    default:
+      execution:
+        isolation:
+          thread:
+            timeoutInMilliseconds: 5000
+      circuitBreaker:
+        requestVolumeThreshold: 5 #触发熔断的最小请求次数，默认20 /10秒
+        sleepWindowInMilliseconds: 10000 #熔断多少秒后去尝试请求 默认 5   打开状态的时间
+        errorThresholdPercentage: 50 #触发熔断的失败请求最小占比，默认50%
+logging:
+  level:
+    root: info
+    org.springframework.web.servlet.DispatcherServlet: DEBUG
+    org.springframework.cloud.sleuth: DEBUG
